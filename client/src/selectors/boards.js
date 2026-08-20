@@ -10,6 +10,12 @@ import { selectPath } from './router';
 import { selectCurrentUserId } from './users';
 import { isLocalId } from '../utils/local-id';
 import { isListArchiveOrTrash } from '../utils/record-helpers';
+import {
+  CardSearchMatchFields,
+  buildSearchSnippet,
+  findCardSearchMatch,
+  getCardCustomFieldsForSearch,
+} from '../utils/card-search';
 import { ListTypes } from '../constants/Enums';
 
 export const makeSelectBoardById = () =>
@@ -354,6 +360,63 @@ export const selectFilteredCardIdsForCurrentBoard = createSelector(
   },
 );
 
+export const selectSearchResultsForCurrentBoard = createSelector(
+  orm,
+  (state) => selectPath(state).boardId,
+  ({ Board }, id) => {
+    if (!id) {
+      return [];
+    }
+
+    const boardModel = Board.withId(id);
+
+    if (!boardModel || !boardModel.search) {
+      return [];
+    }
+
+    const resultsByField = {
+      [CardSearchMatchFields.NAME]: [],
+      [CardSearchMatchFields.DESCRIPTION]: [],
+      [CardSearchMatchFields.CUSTOM_FIELD]: [],
+    };
+
+    boardModel.getCardsModelArray().forEach((cardModel) => {
+      const match = findCardSearchMatch(
+        {
+          name: cardModel.name,
+          description: cardModel.description,
+          customFields: getCardCustomFieldsForSearch(cardModel),
+        },
+        boardModel.search,
+      );
+
+      if (!match) {
+        return;
+      }
+
+      resultsByField[match.field].push({
+        id: cardModel.id,
+        name: cardModel.name,
+        listId: cardModel.listId,
+        listName: cardModel.list.name,
+        field: match.field,
+        customFieldName: match.customFieldName || null,
+        nameMatch: match.field === CardSearchMatchFields.NAME ? match.match : null,
+        snippet:
+          match.field === CardSearchMatchFields.NAME
+            ? null
+            : buildSearchSnippet(match.value, match.match),
+      });
+    });
+
+    return [
+      ...resultsByField[CardSearchMatchFields.NAME],
+      ...resultsByField[CardSearchMatchFields.DESCRIPTION],
+      ...resultsByField[CardSearchMatchFields.CUSTOM_FIELD],
+    ];
+  },
+);
+
 export const selectCustomFieldGroupIdsForCurrentBoard = createSelector(
   orm,
   (state) => selectPath(state).boardId,
@@ -486,6 +549,7 @@ export default {
   selectAvailableListsForCurrentBoard,
   selectCardsExceptCurrentForCurrentBoard,
   selectFilteredCardIdsForCurrentBoard,
+  selectSearchResultsForCurrentBoard,
   selectCustomFieldGroupIdsForCurrentBoard,
   selectCustomFieldGroupsForCurrentBoard,
   selectActivityIdsForCurrentBoard,

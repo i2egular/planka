@@ -4,30 +4,37 @@
  */
 
 import debounce from 'lodash/debounce';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { Icon } from 'semantic-ui-react';
 import { useDidUpdate } from '../../../lib/hooks';
 import { usePopup } from '../../../lib/popup';
+import { push } from '../../../lib/redux-router';
 import { Input } from '../../../lib/custom-ui';
 
 import selectors from '../../../selectors';
 import entryActions from '../../../entry-actions';
 import { useNestedRef } from '../../../hooks';
+import Paths from '../../../constants/Paths';
 import UserAvatar from '../../users/UserAvatar';
 import BoardMembershipsStep from '../../board-memberships/BoardMembershipsStep';
 import LabelChip from '../../labels/LabelChip';
 import LabelsStep from '../../labels/LabelsStep';
+import SearchDropdown from './SearchDropdown';
 
 import styles from './Filters.module.scss';
+
+const SEARCH_MIN_LENGTH_FOR_DROPDOWN = 2;
+const SEARCH_RESULTS_PAGE_SIZE = 8;
 
 const Filters = React.memo(() => {
   const board = useSelector(selectors.selectCurrentBoard);
   const userIds = useSelector(selectors.selectFilterUserIdsForCurrentBoard);
   const labelIds = useSelector(selectors.selectFilterLabelIdsForCurrentBoard);
   const currentUserId = useSelector(selectors.selectCurrentUserId);
+  const searchResults = useSelector(selectors.selectSearchResultsForCurrentBoard);
 
   const withCurrentUserSelector = useSelector(
     (state) => !!selectors.selectCurrentUserMembershipForCurrentBoard(state),
@@ -37,6 +44,45 @@ const Filters = React.memo(() => {
   const [t] = useTranslation();
   const [search, setSearch] = useState(board.search);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeResultIndex, setActiveResultIndex] = useState(-1);
+  const [visibleResultsCount, setVisibleResultsCount] = useState(SEARCH_RESULTS_PAGE_SIZE);
+
+  const visibleSearchResults = useMemo(
+    () => searchResults.slice(0, visibleResultsCount),
+    [searchResults, visibleResultsCount],
+  );
+
+  const isDropdownVisible =
+    isSearchFocused && isDropdownOpen && search.trim().length >= SEARCH_MIN_LENGTH_FOR_DROPDOWN;
+
+  const searchWrapperRef = useRef(null);
+  const [dropdownPosition, setDropdownPosition] = useState(null);
+
+  useLayoutEffect(() => {
+    if (!isDropdownVisible || !searchWrapperRef.current) {
+      setDropdownPosition(null);
+      return undefined;
+    }
+
+    const updateDropdownPosition = () => {
+      const rect = searchWrapperRef.current.getBoundingClientRect();
+
+      setDropdownPosition({
+        top: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+      });
+    };
+
+    updateDropdownPosition();
+
+    window.addEventListener('resize', updateDropdownPosition);
+
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+    };
+  }, [isDropdownVisible]);
 
   const debouncedSearch = useMemo(
     () =>
@@ -52,8 +98,22 @@ const Filters = React.memo(() => {
     debouncedSearch.cancel();
     setSearch('');
     dispatch(entryActions.searchInCurrentBoard(''));
+    setIsDropdownOpen(false);
     searchFieldRef.current.blur();
   }, [dispatch, debouncedSearch, searchFieldRef]);
+
+  const handleResultSelect = useCallback(
+    (cardId) => {
+      dispatch(push(Paths.CARDS.replace(':id', cardId)));
+      setIsDropdownOpen(false);
+      searchFieldRef.current.blur();
+    },
+    [dispatch, searchFieldRef],
+  );
+
+  const handleLoadMoreResultsClick = useCallback(() => {
+    setVisibleResultsCount((count) => count + SEARCH_RESULTS_PAGE_SIZE);
+  }, []);
 
   const handleUserSelect = useCallback(
     (userId) => {
@@ -113,21 +173,66 @@ const Filters = React.memo(() => {
     (_, { value }) => {
       setSearch(value);
       debouncedSearch(value);
+      setIsDropdownOpen(value.trim().length >= SEARCH_MIN_LENGTH_FOR_DROPDOWN);
     },
     [debouncedSearch],
   );
 
   const handleSearchFocus = useCallback(() => {
     setIsSearchFocused(true);
-  }, []);
+
+    if (search.trim().length >= SEARCH_MIN_LENGTH_FOR_DROPDOWN) {
+      setIsDropdownOpen(true);
+    }
+  }, [search]);
 
   const handleSearchKeyDown = useCallback(
     (event) => {
       if (event.key === 'Escape') {
-        cancelSearch();
+        if (isDropdownOpen) {
+          setIsDropdownOpen(false);
+        } else {
+          cancelSearch();
+        }
+
+        return;
+      }
+
+      if (!isDropdownVisible || visibleSearchResults.length === 0) {
+        return;
+      }
+
+      switch (event.key) {
+        case 'ArrowDown':
+          event.preventDefault();
+          setActiveResultIndex((index) => (index + 1) % visibleSearchResults.length);
+
+          break;
+        case 'ArrowUp':
+          event.preventDefault();
+          setActiveResultIndex((index) =>
+            index <= 0 ? visibleSearchResults.length - 1 : index - 1,
+          );
+
+          break;
+        case 'Enter':
+          if (activeResultIndex >= 0 && activeResultIndex < visibleSearchResults.length) {
+            event.preventDefault();
+            handleResultSelect(visibleSearchResults[activeResultIndex].id);
+          }
+
+          break;
+        default:
       }
     },
-    [cancelSearch],
+    [
+      cancelSearch,
+      isDropdownOpen,
+      isDropdownVisible,
+      visibleSearchResults,
+      activeResultIndex,
+      handleResultSelect,
+    ],
   );
 
   const handleSearchBlur = useCallback(() => {
@@ -140,6 +245,8 @@ const Filters = React.memo(() => {
 
   useDidUpdate(() => {
     setSearch(board.search);
+    setActiveResultIndex(-1);
+    setVisibleResultsCount(SEARCH_RESULTS_PAGE_SIZE);
   }, [board.search]);
 
   const BoardMembershipsPopup = usePopup(BoardMembershipsStep);
@@ -192,7 +299,7 @@ const Filters = React.memo(() => {
           </span>
         ))}
       </span>
-      <span className={styles.filter}>
+      <span ref={searchWrapperRef} className={classNames(styles.filter, styles.searchWrapper)}>
         <Input
           ref={handleSearchFieldRef}
           value={search}
@@ -211,6 +318,17 @@ const Filters = React.memo(() => {
           onChange={handleSearchChange}
           onBlur={handleSearchBlur}
         />
+        {isDropdownVisible && (
+          <SearchDropdown
+            position={dropdownPosition}
+            results={visibleSearchResults}
+            hasMore={searchResults.length > visibleResultsCount}
+            activeIndex={activeResultIndex}
+            onResultSelect={handleResultSelect}
+            onResultHover={setActiveResultIndex}
+            onLoadMore={handleLoadMoreResultsClick}
+          />
+        )}
       </span>
     </>
   );

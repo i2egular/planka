@@ -285,6 +285,7 @@ export default {
       list: 'List',
       listActions_title: 'List Actions',
       lists: 'Lists',
+      loadMoreResults: 'Load more results',
       makeProjectPrivate_title: 'Make Project Private',
       makeProjectShared_title: 'Make Project Shared',
       managers: 'Managers',

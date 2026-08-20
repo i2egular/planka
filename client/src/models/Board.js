@@ -6,7 +6,7 @@
 import { attr, fk, many } from 'redux-orm';
 
 import BaseModel from './BaseModel';
-import buildSearchParts from '../utils/build-search-parts';
+import { cardTextMatchesSearch, getCardCustomFieldsForSearch } from '../utils/card-search';
 import { isListKanban } from '../utils/record-helpers';
 import ActionTypes from '../constants/ActionTypes';
 import Config from '../constants/Config';
@@ -330,32 +330,16 @@ export default class extends BaseModel {
     }
 
     if (this.search) {
-      if (this.search.startsWith('/')) {
-        let searchRegex;
-        try {
-          searchRegex = new RegExp(this.search.substring(1), 'i');
-        } catch {
-          return [];
-        }
-
-        cardModels = cardModels.filter(
-          (cardModel) =>
-            searchRegex.test(cardModel.name) ||
-            (cardModel.description && searchRegex.test(cardModel.description)),
-        );
-      } else {
-        const searchParts = buildSearchParts(this.search);
-
-        cardModels = cardModels.filter((cardModel) => {
-          const name = cardModel.name.toLowerCase();
-          const description = cardModel.description && cardModel.description.toLowerCase();
-
-          return searchParts.every(
-            (searchPart) =>
-              name.includes(searchPart) || (description && description.includes(searchPart)),
-          );
-        });
-      }
+      cardModels = cardModels.filter((cardModel) =>
+        cardTextMatchesSearch(
+          {
+            name: cardModel.name,
+            description: cardModel.description,
+            customFields: getCardCustomFieldsForSearch(cardModel),
+          },
+          this.search,
+        ),
+      );
     }
 
     const filterUserIds = this.filterUsers.toRefArray().map((user) => user.id);
