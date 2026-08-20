@@ -25,6 +25,13 @@ const DEFAULT_DATA = {
 };
 
 const MULTIPLE_REGEX = /\s*\r?\n\s*/;
+const BULLET_REGEX = /^[-*]\s+/;
+
+const parseMultipleNames = (value) =>
+  value
+    .split(MULTIPLE_REGEX)
+    .map((name) => name.replace(BULLET_REGEX, '').trim())
+    .filter(Boolean);
 
 const AddTask = React.memo(({ children, taskListId, isOpened, onClose }) => {
   const cards = useSelector(selectors.selectCardsExceptCurrentForCurrentBoard);
@@ -63,7 +70,7 @@ const AddTask = React.memo(({ children, taskListId, isOpened, onClose }) => {
       }
 
       if (!isLinkingToCard && isMultiple) {
-        cleanData.name.split(MULTIPLE_REGEX).forEach((name) => {
+        parseMultipleNames(cleanData.name).forEach((name) => {
           dispatch(
             entryActions.createTask(taskListId, {
               ...cleanData,
@@ -97,6 +104,34 @@ const AddTask = React.memo(({ children, taskListId, isOpened, onClose }) => {
       }
     },
     [onClose, isLinkingToCard, submit],
+  );
+
+  const handleFieldPaste = useCallback(
+    (event) => {
+      if (isLinkingToCard) {
+        return;
+      }
+
+      const names = parseMultipleNames(event.clipboardData.getData('text'));
+
+      if (names.length <= 1) {
+        return;
+      }
+
+      event.preventDefault();
+
+      names.forEach((name) => {
+        dispatch(
+          entryActions.createTask(taskListId, {
+            name,
+          }),
+        );
+      });
+
+      setData(DEFAULT_DATA);
+      focusField();
+    },
+    [isLinkingToCard, taskListId, dispatch, setData, focusField],
   );
 
   const handleToggleLinkingClick = useCallback(() => {
@@ -171,6 +206,7 @@ const AddTask = React.memo(({ children, taskListId, isOpened, onClose }) => {
           className={styles.field}
           onKeyDown={handleFieldKeyDown}
           onChange={handleFieldChange}
+          onPaste={handleFieldPaste}
         />
       )}
       <div className={styles.controls}>
