@@ -1,6 +1,6 @@
 FROM node:24-alpine
 
 RUN apk -U upgrade \
-  && apk add bash build-base python3 xdg-utils --no-cache
+  && apk add bash build-base python3 py3-pip xdg-utils --no-cache
 
 WORKDIR /app
