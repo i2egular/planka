@@ -6,7 +6,10 @@ on:
 
 jobs:
   build-and-push-docker-image:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
