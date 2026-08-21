@@ -338,6 +338,7 @@ export default {
       role: 'Role',
       saveThisKeyItWillNotBeShownAgain: 'Save this key — it will not be shown again!',
       searchCards: 'Search cards...',
+      searchCardsInProject: 'Search all boards...',
       searchCustomFieldGroups: 'Search custom field groups...',
       searchCustomFields: 'Search custom fields...',
       searchLabels: 'Search labels...',

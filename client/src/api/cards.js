@@ -60,6 +60,12 @@ const getCards = (listId, data, headers) =>
     },
   }));
 
+const getCardsInProject = (projectId, data, headers) =>
+  socket.get(`/projects/${projectId}/cards`, data, headers).then((body) => ({
+    ...body,
+    items: body.items.map(transformCard),
+  }));
+
 const createCard = (listId, data, headers) =>
   socket.post(`/lists/${listId}/cards`, transformCardData(data), headers).then((body) => ({
     ...body,
@@ -134,6 +140,7 @@ const makeHandleCardDelete = makeHandleCardUpdate;
 
 export default {
   getCards,
+  getCardsInProject,
   createCard,
   getCard,
   updateCard,

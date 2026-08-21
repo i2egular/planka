@@ -17,6 +17,7 @@ import { BoardMembershipRoles, BoardViews, UserRoles } from '../../../constants/
 import UserAvatar from '../../users/UserAvatar';
 import UserActionsStep from '../../users/UserActionsStep';
 import NotificationsStep from '../../notifications/NotificationsStep';
+import ProjectSearch from './ProjectSearch';
 
 import styles from './Header.module.scss';
 
@@ -119,6 +120,7 @@ const Header = React.memo(() => {
             </Menu.Item>
           </Menu.Menu>
         )}
+        <ProjectSearch />
         <Menu.Menu position="right">
           {withFavoritesToggler && (
             <Menu.Item

@@ -65,7 +65,9 @@ const SearchDropdown = React.memo(
                       </span>
                       <span className={styles.itemList}>
                         <Icon fitted name="list" size="small" className={styles.itemListIcon} />
-                        {result.listName}
+                        {result.boardName
+                          ? `${result.boardName} / ${result.listName}`
+                          : result.listName}
                       </span>
                     </div>
                     {result.snippet && (

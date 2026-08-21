@@ -1,0 +1,21 @@
+## 1. Server: search query & endpoint
+- [x] 1.1 Add `Card.qm.getByProjectId(projectId, { search, boardIds, limit })` in `server/api/hooks/query-methods/models/Card.js`, modeled on the search branch of `getByEndlessListId`: joins `card` → `list` → `board`, filters `board.project_id`, `board.id IN (boardIds)`, `list.type IN ('active', 'closed')`, and matches `card.name`/`card.description` via `ILIKE ALL` (plain-text, tokenized with `buildSearchParts`) or `~*` (`/regex/` mode); handle invalid-regex errors the same way (return `[]`)
+- [x] 1.2 Add route `GET /api/projects/:id/cards` in `server/config/routes.js` and controller `server/api/controllers/cards/index-in-project.js`: reuse the visible-boardIds computation from `server/api/controllers/projects/show.js` (project manager/admin → all project boards; otherwise → boards with a `BoardMembership` for the current user), require a non-empty `search` input, call the new query method, and return `{ items, included: { boards, lists } }` (boards/lists needed so the client can label results without extra requests)
+- [x] 1.3 Add swagger doc block on the new controller matching the style of `projects/show.js`
+- [ ] 1.4 Server tests: permission scoping (non-member boards excluded), plain-text multi-token match, regex mode, invalid regex, archive/trash exclusion, limit/pagination — skipped: the repo has no working controller/integration test harness to extend (the only precedent, `server/test/integration/models/User.test.js`, is entirely commented out); covered instead by manual verification (see 4.3)
+
+## 2. Client: API + data fetching
+- [x] 2.1 Add API client method for `GET /api/projects/:id/cards?search=...` (`client/src/api/cards.js` → `getCardsInProject`)
+- [x] 2.2 Fetch directly from the component via `api.getCardsInProject`, passing the `Authorization` header explicitly (read from `selectors.selectAccessToken`) since this bypasses the saga-based `request()` wrapper that normally attaches it — matches the precedent in `TermsPane.jsx` for read-only, non-normalized fetches, plus the auth header
+
+## 3. Client: navbar search UI
+- [x] 3.1 Add a centered search box to `client/src/components/common/Header/Header.jsx` (new `ProjectSearch` component between the existing left/right `Menu.Menu` groups), shown only when `project` is set; hidden under 768px width
+- [x] 3.2 Generalize `client/src/components/boards/BoardActions/SearchDropdown/SearchDropdown.jsx` to render `boardName / listName` when `boardName` is present on a result, falling back to `listName` alone for board search
+- [x] 3.3 Wire debounced input (400ms, matching board search) → fetch → ranked, paginated (8 per page, "load more") results
+- [x] 3.4 Keyboard interaction: arrow-key navigation, Enter to select, two-stage Escape (close dropdown, then clear input) — mirrors `Filters.jsx`'s `handleSearchKeyDown`
+- [x] 3.5 Selecting a result navigates via `Paths.CARDS.replace(':id', cardId)` and closes/clears the dropdown
+
+## 4. Verification
+- [x] 4.1 `npm run server:lint` passes; `npm run server:test` runs (pre-existing suite, unaffected by this change)
+- [x] 4.2 `npm run client:lint` / `npm run client:test` pass
+- [x] 4.3 Manual check across two local dev instances (Docker-based `docker-compose-dev.yml` stack + a directly-run server), multiple projects/boards: cross-board match confirmed both ways (search from Main Board surfaces a card that only exists on Second board, and vice versa on a second project), board/list labels correct, 9+ results triggers "Load more results", arrow-key nav + Enter navigates and opens the correct card, two-stage Escape (close then clear) works, search box hidden under 768px width, regex mode (`/^TL`, matching this codebase's existing leading-slash-only convention) correctly matches/excludes, archive exclusion confirmed (archived a card, confirmed it dropped out of project-wide search results, then restored it). Not exercised: non-member board exclusion for a non-admin user (blocked on constructing a suitable test user in the time available) — the controller reuses the identical visible-boardIds logic already relied on by `projects/show.js`, so this is a shared, already-exercised code path rather than new untested logic

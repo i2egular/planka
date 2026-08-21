@@ -176,6 +176,7 @@ module.exports.routes = {
   'POST /api/lists/:id/clear': 'lists/clear',
   'DELETE /api/lists/:id': 'lists/delete',
 
+  'GET /api/projects/:projectId/cards': 'cards/index-in-project',
   'GET /api/lists/:listId/cards': 'cards/index',
   'POST /api/lists/:listId/cards': 'cards/create',
   'GET /api/cards/:id': 'cards/show',

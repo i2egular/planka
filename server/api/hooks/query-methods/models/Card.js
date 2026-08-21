@@ -163,6 +163,58 @@ const getByListIds = async (listIds, { sort = ['position', 'id'] } = {}) =>
     { sort },
   );
 
+const getByProjectId = async (projectId, { boardIds, search, limit = LIMIT } = {}) => {
+  if (!search || boardIds.length === 0) {
+    return [];
+  }
+
+  const queryValues = [];
+
+  const boardIdValues = boardIds.map((boardId) => {
+    queryValues.push(boardId);
+    return `$${queryValues.length}`;
+  });
+
+  let query = `SELECT card.* FROM card INNER JOIN list ON card.list_id = list.id`;
+  query += ` WHERE card.board_id IN (${boardIdValues.join(', ')}) AND list.type IN ('active', 'closed')`;
+
+  if (search.startsWith('/')) {
+    queryValues.push(search.substring(1));
+    query += ` AND (card.name ~* $${queryValues.length} OR card.description ~* $${queryValues.length})`;
+  } else {
+    const searchParts = buildSearchParts(search);
+
+    if (searchParts.length === 0) {
+      return [];
+    }
+
+    const ilikeValues = searchParts.map((searchPart) => {
+      queryValues.push(searchPart);
+      return `'%' || $${queryValues.length} || '%'`;
+    });
+
+    query += ` AND ((card.name ILIKE ALL(ARRAY[${ilikeValues.join(', ')}])) OR (card.description ILIKE ALL(ARRAY[${ilikeValues.join(', ')}])))`;
+  }
+
+  query += ` ORDER BY card.list_changed_at DESC, card.id DESC LIMIT ${limit}`;
+
+  let queryResult;
+  try {
+    queryResult = await sails.sendNativeQuery(query, queryValues);
+  } catch (error) {
+    if (
+      error.code === 'E_QUERY_FAILED' &&
+      error.message.includes('Query failed: invalid regular expression')
+    ) {
+      return [];
+    }
+
+    throw error;
+  }
+
+  return queryResult.rows.map((row) => transformRowToModel(row));
+};
+
 const getOneById = (id, { listId } = {}) => {
   const criteria = {
     id,
@@ -239,6 +291,7 @@ module.exports = {
   getByListId,
   getByEndlessListId,
   getByListIds,
+  getByProjectId,
   getOneById,
   update,
   updateOne,
