@@ -13,3 +13,6 @@ yarn.lock
 
 # Chart dependencies
 **/charts/*.tgz
+
+# Claude
+.claude
