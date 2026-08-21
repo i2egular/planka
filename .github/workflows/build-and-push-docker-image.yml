@@ -3,6 +3,11 @@ name: Build and Push Docker Image
 on:
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to build (e.g. v2.2.1-custom.1)'
+        required: true
 
 jobs:
   build-and-push-docker-image:
@@ -14,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -59,7 +66,11 @@ jobs:
         id: set-version
         with:
           result-encoding: string
-          script: return context.payload.release.tag_name.replace('v', '')
+          script: |
+            const tagName = context.payload.release
+              ? context.payload.release.tag_name
+              : context.payload.inputs.tag;
+            return tagName.replace('v', '')
 
       - name: Generate Docker image tags
         id: metadata
