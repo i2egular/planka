@@ -10,6 +10,7 @@ import { selectPath } from './router';
 import { selectCurrentUserId } from './users';
 import { isLocalId } from '../utils/local-id';
 import { isListArchiveOrTrash } from '../utils/record-helpers';
+import groupCardIdsByDueDate from '../utils/group-card-ids-by-due-date';
 import {
   CardSearchMatchFields,
   buildSearchSnippet,
@@ -360,6 +361,24 @@ export const selectFilteredCardIdsForCurrentBoard = createSelector(
   },
 );
 
+export const selectFilteredCardIdsByDueDateForCurrentBoard = createSelector(
+  orm,
+  (state) => selectPath(state).boardId,
+  ({ Board }, id) => {
+    if (!id) {
+      return {};
+    }
+
+    const boardModel = Board.withId(id);
+
+    if (!boardModel) {
+      return {};
+    }
+
+    return groupCardIdsByDueDate(boardModel.getFilteredCardsModelArray());
+  },
+);
+
 export const selectSearchResultsForCurrentBoard = createSelector(
   orm,
   (state) => selectPath(state).boardId,
@@ -549,6 +568,7 @@ export default {
   selectAvailableListsForCurrentBoard,
   selectCardsExceptCurrentForCurrentBoard,
   selectFilteredCardIdsForCurrentBoard,
+  selectFilteredCardIdsByDueDateForCurrentBoard,
   selectSearchResultsForCurrentBoard,
   selectCustomFieldGroupIdsForCurrentBoard,
   selectCustomFieldGroupsForCurrentBoard,

@@ -28,3 +28,11 @@ The two list states that make a card part of the "live" board — visible, filte
 **Archive List / Trash List**:
 The two list states that remove a card from the live board. Cards here are excluded from Board Search entirely and are not loaded with the rest of a board's data.
 _Avoid_: deleted card, for Archive List (archived cards are recoverable, not deleted)
+
+**Board View**:
+The layout mode used to render a board's cards on screen — Kanban, Grid, List, or Calendar. A board persists a default view; the currently active view for a session can differ from that default.
+_Avoid_: board layout, board mode
+
+**Calendar View**:
+A Board View that plots cards on a week or month grid, one cell per calendar day, positioned by each card's due date. Clicking a card opens the Card Modal to edit it directly; it does not support dragging a card to reschedule it.
+_Avoid_: gantt view (a distinct, not-yet-built view that would plot cards as duration bars — deferred because Card has no start-date field to anchor a duration)

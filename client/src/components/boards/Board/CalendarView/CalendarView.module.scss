@@ -1,0 +1,68 @@
+/*!
+ * Copyright (c) 2024 PLANKA Software GmbH
+ * Licensed under the Fair Use License: https://github.com/plankanban/planka/blob/master/LICENSE.md
+ */
+
+:global(#app) {
+  .wrapper {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding: 0 20px 20px;
+    width: 100%;
+
+    @supports (-moz-appearance: none) {
+      scrollbar-color: rgba(0, 0, 0, 0.32) rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .toolbar {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 12px 0;
+  }
+
+  .navigation {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+  }
+
+  .periodLabel {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .weekdays {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 1px;
+  }
+
+  .weekday {
+    background: rgba(0, 0, 0, 0.16);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 6px;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .grid {
+    display: grid;
+    gap: 1px;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .gridMonth {
+    grid-auto-rows: minmax(96px, auto);
+  }
+
+  .gridWeek {
+    grid-auto-rows: minmax(240px, auto);
+  }
+}

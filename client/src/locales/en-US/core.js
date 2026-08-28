@@ -11,6 +11,9 @@ export default {
     longDateTime: "MMMM d 'at' p",
     fullDate: 'MMM d, y',
     fullDateTime: "MMMM d, y 'at' p",
+    dayOfMonth: 'd',
+    weekdayShort: 'EEEEEE',
+    monthAndYear: 'MMMM yyyy',
   },
 
   translation: {
@@ -108,6 +111,7 @@ export default {
       byCreationTime: 'By creation time',
       byDefault: 'By default',
       byDueDate: 'By due date',
+      calendar: 'Calendar',
       canBeInvitedToWorkInBoards: 'Can be invited to work in boards.',
       canComment: 'Can comment',
       canCreateOwnProjectsAndBeInvitedToWorkInOthers:
@@ -124,6 +128,7 @@ export default {
       cardsOnThisListAreCompleteAndReadyToBeArchived:
         'Cards on this list are complete and ready to be archived.',
       cardsOnThisListAreReadyToBeWorkedOn: 'Cards on this list are ready to be worked on.',
+      cardsPlottedByDueDateOnACalendar: 'Cards plotted by due date on a calendar.',
       clickHereOrRefreshPageToUpdate: '<0>Click here</0> or refresh the page to update.',
       clientHostnameInEhlo: 'Client hostname in EHLO',
       closed: 'Closed',
@@ -292,8 +297,11 @@ export default {
       memberActions_title: 'Member Actions',
       members: 'Members',
       minutes: 'Minutes',
+      month: 'Month',
       moreActions: 'More actions',
       moreActions_title: 'More Actions',
+      moreCards_one: '+{{count}} more',
+      moreCards_other: '+{{count}} more',
       moveCard_title: 'Move Card',
       moveList_title: 'Move List',
       myOwn_title: 'My Own',
@@ -380,6 +388,7 @@ export default {
         'There is no preview available for this attachment.',
       time: 'Time',
       title: 'Title',
+      today: 'Today',
       trash: 'Trash',
       trashHasBeenSuccessfullyEmptied: 'Trash has been successfully emptied.',
       turnOffRecentCardHighlighting: 'Turn off recent card highlighting',
@@ -422,6 +431,7 @@ export default {
       viewers: 'Viewers',
       visualTaskManagementWithLists: 'Visual task management with lists.',
       webhooks: 'Webhooks',
+      week: 'Week',
       whatsNew_title: "What's New",
       withoutBaseGroup: 'Without base group',
       writeComment: 'Write a comment...',
